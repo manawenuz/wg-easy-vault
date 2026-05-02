@@ -51,6 +51,10 @@ Wikilinks (`[[...]]`) and the graph view both work out of the box.
 - `in-progress` — Kimi is implementing, do not change scope
 - `shipped` — merged; the `touches:` list has been verified against the diff
 
+## Published site
+
+This vault is published at **https://manawenuz.github.io/wg-easy-vault/** via Quartz. See [[handoff/quartz-publishing]] for how to update it.
+
 ## Repo location
 
 This vault lives at `docs/obsidian/` in the [`manawenuz/wg-easy`](https://github.com/manawenuz/wg-easy) repo. Upstream is [`wg-easy/wg-easy`](https://github.com/wg-easy/wg-easy), tracked as the `upstream` git remote.
