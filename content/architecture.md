@@ -89,26 +89,26 @@ classDiagram
         <<interface>>
         +id: EngineType
         +capabilities: EngineCapabilities
-        +healthCheck(iface: InterfaceType) Promise~Health~
-        +syncInterface(iface: InterfaceType, peers: Client[]) Promise~void~
-        +createPeer(iface: InterfaceType, peer: Client) Promise~void~
-        +updatePeer(iface: InterfaceType, peer: Client) Promise~void~
-        +removePeer(iface: InterfaceType, peerPublicKey: string) Promise~void~
-        +enablePeer(iface: InterfaceType, peerPublicKey: string) Promise~void~
-        +disablePeer(iface: InterfaceType, peerPublicKey: string) Promise~void~
-        +applySpeedLimit(iface, peerPublicKey, upKbps, downKbps) Promise~void~
-        +sampleUsage(iface: InterfaceType) Promise~UsageSample[]~
-        +bringUp(iface: InterfaceType) Promise~void~
-        +bringDown(iface: InterfaceType) Promise~void~
+        +healthCheck(iface: InterfaceType): Promise~Health~
+        +syncInterface(iface: InterfaceType, peers: Client[]): Promise~void~
+        +createPeer(iface: InterfaceType, peer: Client): Promise~void~
+        +updatePeer(iface: InterfaceType, peer: Client): Promise~void~
+        +removePeer(iface: InterfaceType, peerPublicKey: string): Promise~void~
+        +enablePeer(iface: InterfaceType, peerPublicKey: string): Promise~void~
+        +disablePeer(iface: InterfaceType, peerPublicKey: string): Promise~void~
+        +applySpeedLimit(iface: InterfaceType, peerPublicKey: string, upKbps: number, downKbps: number): Promise~void~
+        +sampleUsage(iface: InterfaceType): Promise~UsageSample[]~
+        +bringUp(iface: InterfaceType): Promise~void~
+        +bringDown(iface: InterfaceType): Promise~void~
     }
 
     class WireguardEngine {
         -transport: LocalShellTransport
-        +generateConfig(iface, peers) string
+        +generateConfig(iface: InterfaceType, peers: Client[]): string
     }
     class AmneziaWgEngine {
         -transport: LocalShellTransport
-        +generateConfig(iface, peers) string
+        +generateConfig(iface: InterfaceType, peers: Client[]): string
     }
     class BoringtunEngine {
         -transport: LocalShellTransport
@@ -117,7 +117,7 @@ classDiagram
     class MikrotikEngine {
         -api: RouterOSClient
         -ssh: SshTransport
-        +bootstrap(router) Promise~void~
+        +bootstrap(router: Router): Promise~void~
     }
 
     VpnEngine <|.. WireguardEngine
@@ -155,7 +155,7 @@ erDiagram
         int id PK
         string username
         string password_hash
-        string role  "superadmin|admin|operator|viewer|client"
+        string role
         string email
         bool enabled
         bool totp_verified
@@ -165,8 +165,8 @@ erDiagram
     ROUTER {
         int id PK
         string name
-        string engine_type "wireguard|amneziawg|boringtun|mikrotik"
-        string transport "local-shell|ssh|routeros-api"
+        string engine_type
+        string transport
         string host
         int port
         json credentials_encrypted
@@ -203,7 +203,7 @@ erDiagram
     QUOTA {
         int client_id PK_FK
         bigint limit_bytes
-        string period "daily|weekly|monthly"
+        string period
         bigint used_bytes
         timestamp period_start
         timestamp period_end
@@ -224,7 +224,7 @@ erDiagram
     ADMIN_ROUTER_ACL {
         int user_id FK
         int router_id FK
-        string permission "read|write|admin"
+        string permission
     }
     AUDIT_LOG {
         int id PK
@@ -242,7 +242,7 @@ erDiagram
     ROUTE_POLICY {
         int id PK
         int interface_id FK
-        int client_id FK_NULL
+        int client_id
         string match_cidr
         int exit_node_id FK
         int priority
