@@ -1,7 +1,7 @@
 ---
 id: PRD-30-01
 title: Promote AmneziaWG from build flag to runtime engine
-status: draft
+status: shipped
 phase: P2
 depends_on:
   - "[[prds/00-foundation/01-backend-abstraction]]"
@@ -12,7 +12,13 @@ touches:
   - src/server/engines/wireguard/index.ts
   - Dockerfile
   - src/app/components/Interfaces/EngineSelector.vue (new)
-  - src/app/pages/admin/interface/index.vue
+  - src/app/pages/admin/interface.vue
+  - src/server/engines/wg-like.ts (new)
+  - src/server/database/repositories/interface/schema.ts
+  - src/server/database/repositories/interface/types.ts
+  - src/server/database/sqlite.ts
+  - src/server/api/information.get.ts
+  - src/i18n/locales/en.json
 ---
 
 # PRD-30-01 — Promote AmneziaWG to a runtime engine
@@ -92,3 +98,12 @@ pnpm test src/server/engines/amneziawg
 pnpm dev
 # manual: stand up AWG client (e.g. `awg-quick up`)
 ```
+
+## Resolution log (2026-05-02)
+
+- **Shipped**: `AmneziaWgEngine` as a standalone engine implementation.
+- **Engine Selection**: Added `EngineSelector` component and integrated it into the interface settings page.
+- **Code Reuse**: Extracted `wg-like.ts` functional helpers for shared parsing logic between WG and AWG engines.
+- **Migration**: Added `migrateAwgEngineType()` to `sqlite.ts` for smooth transitions from legacy `WG_EXECUTABLE=awg` deployments.
+- **API Coverage**: Updated all 25+ API and scheduler files to dynamically resolve the correct engine for each interface.
+- **Tests**: 12 new unit tests for the AWG engine and config generator. Total suite: 149 tests pass.

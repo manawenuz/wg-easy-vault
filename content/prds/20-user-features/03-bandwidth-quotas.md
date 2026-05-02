@@ -1,7 +1,7 @@
 ---
 id: PRD-20-03
 title: Bandwidth quotas — daily / weekly / monthly with auto-disable
-status: approved
+status: shipped
 phase: P1
 depends_on:
   - "[[prds/00-foundation/01-backend-abstraction]]"
@@ -17,8 +17,9 @@ touches:
   - src/server/api/admin/clients/[id]/quota.put.ts (new)
   - src/server/api/admin/clients/[id]/quota.delete.ts (new)
   - src/app/components/Clients/QuotaForm.vue (new)
-  - src/app/components/Dashboard/QuotaProgress.vue (new)
-  - src/app/pages/admin/clients/[id].vue
+  - src/app/components/Clients/QuotaProgress.vue (new)
+  - src/app/components/Clients/QuotaProgressBar.vue (new)
+  - src/app/pages/clients/[id].vue
 ---
 
 # PRD-20-03 — Bandwidth quotas
@@ -26,6 +27,19 @@ touches:
 > Spec ref: [[architecture#7-quota-enforcement-loop]]
 
 ## Why
+...
+### Manual test plan
+...
+
+## Resolution log (2026-05-02)
+
+- **Backend Workers**: Implemented four scheduler workers (UsagePoller, QuotaEvaluator, PeriodResetter, UsageRollup) started on app init.
+- **Counter Reset Detection**: UsagePoller correctly handles `delta < 0` scenarios by treating the new sample as absolute fresh usage.
+- **Admin APIs**: Scoped admin endpoints for quota CRUD implemented under `/api/admin/clients/[id]/quota`.
+- **UI Integration**: Added `QuotaForm`, `QuotaProgress`, and `QuotaProgressBar` components.
+- **Follow-up Fix**: Merged the Quota form directly into the existing `src/app/pages/clients/[id].vue` instead of creating a separate admin page, ensuring all client settings remain in one place.
+- **Tests**: 8 unit tests for admin quota APIs verified.
+
 
 Many deployments need volume caps per user — e.g., 50 GB/month for a basic plan, hard limit. Today there's nothing. This PRD adds **periodic volume quotas** with **auto-disable on exceed** and **automatic reset/re-enable at period end**.
 

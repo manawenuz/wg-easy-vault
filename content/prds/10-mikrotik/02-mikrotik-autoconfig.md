@@ -1,7 +1,7 @@
 ---
 id: PRD-10-02
 title: MikroTik auto-configuration — bootstrap from zero
-status: draft
+status: shipped
 phase: P1
 depends_on:
   - "[[prds/10-mikrotik/01-mikrotik-driver]]"
@@ -11,6 +11,8 @@ touches:
   - src/server/api/admin/router/[id]/bootstrap.post.ts (new)
   - src/app/pages/admin/routers/[id]/bootstrap.vue (new)
   - src/app/components/Routers/BootstrapWizard.vue (new)
+  - src/server/engines/mikrotik/bootstrap.test.ts (new)
+  - src/i18n/locales/en.json
 ---
 
 # PRD-10-02 — MikroTik auto-configuration
@@ -171,3 +173,11 @@ Take `gateway` and resolve `interface`. If multiple defaults, the wizard asks th
 pnpm test src/server/engines/mikrotik/bootstrap.test.ts
 # manual: spin a CHR, run bootstrap from UI
 ```
+
+## Resolution log (2026-05-02)
+
+- **Shipped**: Idempotent 11-step bootstrap orchestrator via SSH. Progress streamed via SSE (POST fetch + ReadableStream).
+- **Wizard UI**: 4-step wizard with live log panel and auto-detection of WAN interface.
+- **Security**: Creates random API password, enables API-SSL, captures fingerprint.
+- **Tests**: 4 unit tests verifying green-path, ROS < 7 rejection, firewall idempotency, and WAN detection failure.
+- **Note**: `src/app/pages/admin/routers/[id].vue` was moved to `[id]/index.vue` to accommodate the bootstrap child route.

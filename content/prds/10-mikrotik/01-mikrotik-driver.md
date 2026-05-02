@@ -1,7 +1,7 @@
 ---
 id: PRD-10-01
 title: MikroTik driver — RouterOS API + SSH
-status: draft
+status: shipped
 phase: P1
 depends_on:
   - "[[prds/00-foundation/01-backend-abstraction]]"
@@ -21,12 +21,23 @@ touches:
   - src/server/api/admin/router/[id]/test.post.ts (new)
   - src/app/pages/admin/routers/index.vue (new)
   - src/app/pages/admin/routers/[id].vue (new)
-  - package.json (add: routeros-client, ssh2)
+  - src/package.json
+  - src/server/utils/crypto.ts (new)
+  - src/server/database/repositories/router/service.ts
+  - src/server/database/repositories/interface/service.ts
+  - src/vitest.config.ts
+  - src/server/api/admin/interfaces/index.get.ts (new)
 ---
 
 # PRD-10-01 — MikroTik driver
 
-> Spec ref: [[architecture#3-vpnengine-driver-interface]], [[architecture#6-mikrotik-provisioning]]
+## Ambiguity Resolution (2026-05-02)
+
+1. **Libraries**: Use `routeros-client` (for API) and `ssh2` (for SSH). Add them to `src/package.json`.
+2. **Encryption Key**: Use an environment variable `ROUTER_ENCRYPTION_KEY`. If not set, fall back to a SHA-256 hash of `sessionPassword`. Implement a simple `aes-256-gcm` helper in a new `src/server/utils/crypto.ts`.
+3. **Engine Registration**: Update `src/server/engines/registry.ts` to support lazy-loading or explicit registration of the `MikrotikEngine`. Since `MikrotikEngine` needs router-specific instances but the `VpnEngine` interface currently assumes a singleton per type, implement `MikrotikEngine` as a singleton that internalizes a connection pool/cache keyed by `interface.routerId`.
+4. **Admin UI**: The new `/admin/routers` pages follow the existing styling (Panel, Form, Icons).
+5. **Existing Files**: `src/server/engines/registry.ts` is in `touches:`. Refactored to accommodate the new engine.
 
 ## Why
 
@@ -214,3 +225,18 @@ pnpm test src/server/engines/mikrotik src/server/transports
 # integration (manual): see test plan
 pnpm dev
 ```
+
+## Resolution log (2026-05-02)
+
+- **Shipped**: `MikrotikEngine` implementing full `VpnEngine` interface via `RouterOsApiTransport` + `SshTransport`. 
+- **Management UI**: Router CRUD API and admin UI pages (`/admin/routers`).
+- **Security**: AES-256-GCM credential encryption for router API/SSH credentials.
+- **Tests**: 13 new MikroTik-specific tests pass; 127 unit tests total in the suite.
+- **Deviations**:
+  - Added `src/server/database/repositories/router/service.ts` (CRUD + `updateLastSeen`) and `src/server/database/repositories/interface/service.ts` (`getAll`, `getByRouterId`) — required for API functionality.
+  - Added `src/server/api/admin/interfaces/index.get.ts` — required to list interfaces per router.
+  - No dedicated `GET /api/admin/router/[id]` endpoint; detail page filters the list client-side.
+  - TLS fingerprint pinning (TOFU) not implemented; transport supports TLS but without fingerprint verification.
+- **Follow-ups**:
+  - Implement TOFU TLS fingerprint pinning for RouterOS API.
+  - SSH bootstrap automation ([[prds/10-mikrotik/02-mikrotik-autoconfig|PRD-10-02]]).

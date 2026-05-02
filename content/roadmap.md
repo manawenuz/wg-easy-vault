@@ -20,31 +20,31 @@ Goal: make every later phase *additive* by introducing the seams now.
 | 3 | [[prds/00-foundation/03-auth-refactor]] | Splits admin auth from user-dashboard auth, introduces API tokens. Required before user-dashboard and multi-admin. | ✅ |
 | 4 | [[prds/00-foundation/02-multi-admin-rbac]] | Roles + permissions + audit log. Required before exposing per-user dashboards or per-router scoping. | ✅ |
 
-## P1 — Flagship features (the reason this fork exists)
+## P1 — Flagship features (the reason this fork exists) ✅ SHIPPED
 
 Goal: prove the engine abstraction with MikroTik, ship the user-visible features that differentiate the fork.
 
-| Order | PRD | Notes |
-| --- | --- | --- |
-| 1 | [[prds/10-mikrotik/01-mikrotik-driver]] | First non-Linux engine. Validates the [[prds/00-foundation/01-backend-abstraction\|VpnEngine]] interface. |
-| 2 | [[prds/10-mikrotik/02-mikrotik-autoconfig]] | Bootstrap a fresh RouterOS device end-to-end. |
-| 3 | [[prds/20-user-features/01-user-dashboard]] | End-user view: status, expiry, usage graph. |
-| 4 | [[prds/20-user-features/02-qr-key-login]] | Login by scanning the WireGuard QR or pasting the config — no password. |
-| 5 | [[prds/20-user-features/03-bandwidth-quotas]] | Daily / weekly / monthly volume caps, auto-disable, auto-reset. |
-| 6 | [[prds/20-user-features/04-speed-limits]] | Per-client KB/s up/down rate caps. Engine-side: tc/HTB on Linux, queue tree on MikroTik. |
+| Order | PRD | Notes | Status |
+| --- | --- | --- | --- |
+| 1 | [[prds/10-mikrotik/01-mikrotik-driver]] | First non-Linux engine. Validates the [[prds/00-foundation/01-backend-abstraction\|VpnEngine]] interface. | ✅ |
+| 2 | [[prds/10-mikrotik/02-mikrotik-autoconfig]] | Bootstrap a fresh RouterOS device end-to-end. | ✅ |
+| 3 | [[prds/20-user-features/01-user-dashboard]] | End-user view: status, expiry, usage graph. | ✅ |
+| 4 | [[prds/20-user-features/02-qr-key-login]] | Login by scanning the WireGuard QR or pasting the config — no password. | ✅ |
+| 5 | [[prds/20-user-features/03-bandwidth-quotas]] | Daily / weekly / monthly volume caps, auto-disable, auto-reset. | ✅ |
+| 6 | [[prds/20-user-features/04-speed-limits]] | Per-client KB/s up/down rate caps. Engine-side: tc/HTB on Linux, queue tree on MikroTik. | ✅ |
 
-## P2 — Multi-engine & federation
+## P2 — Multi-engine & federation (In Progress)
 
 Goal: prove the abstraction with two more engines, scale to multi-router.
 
-| Order | PRD |
-| --- | --- |
-| 1 | [[prds/30-multi-engine/01-amneziawg-promotion]] |
-| 2 | [[prds/30-multi-engine/02-boringtun-driver]] |
-| 3 | [[prds/30-multi-engine/03-engine-selection-ux]] |
-| 4 | [[prds/40-multi-server/01-multi-router-federation]] |
-| 5 | [[prds/40-multi-server/02-admin-router-acl]] |
-| 6 | [[prds/10-mikrotik/03-mikrotik-obfuscation]] |
+| Order | PRD | Status |
+| --- | --- | --- |
+| 1 | [[prds/30-multi-engine/01-amneziawg-promotion]] | ✅ |
+| 2 | [[prds/30-multi-engine/02-boringtun-driver]] | ✅ |
+| 3 | [[prds/30-multi-engine/03-engine-selection-ux]] | ✅ |
+| 4 | [[prds/10-mikrotik/03-mikrotik-obfuscation]] | ✅ |
+| 5 | [[prds/40-multi-server/01-multi-router-federation]] | 🌑 |
+| 6 | [[prds/40-multi-server/02-admin-router-acl]] | 🌑 |
 
 ## P3 — Long tail
 

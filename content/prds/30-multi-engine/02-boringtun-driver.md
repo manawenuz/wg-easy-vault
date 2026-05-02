@@ -1,14 +1,18 @@
 ---
 id: PRD-30-02
 title: BoringTun engine — userspace WireGuard
-status: draft
+status: shipped
 phase: P2
 depends_on:
   - "[[prds/00-foundation/01-backend-abstraction]]"
 touches:
   - src/server/engines/boringtun/index.ts (new)
   - src/server/engines/boringtun/process.ts (new)
+  - src/server/engines/boringtun/index.test.ts (new)
+  - src/server/engines/boringtun/process.test.ts (new)
   - src/server/engines/registry.ts
+  - src/server/engines/registry.test.ts
+  - src/server/database/repositories/interface/types.ts
   - Dockerfile
 ---
 
@@ -85,3 +89,13 @@ pnpm test src/server/engines/boringtun
 docker build -t wg-easy-test --build-arg ENGINE=boringtun .
 docker run --rm --cap-add NET_ADMIN --device /dev/net/tun wg-easy-test
 ```
+
+## Resolution log (2026-05-02)
+
+- **Shipped**: `BoringtunEngine` and `BoringtunProcessManager` with UAPI client.
+- **Process Supervision**: Spawns `boringtun-cli`, supervises crashes (max 3 restarts).
+- **UAPI Protocol**: Implemented directly over Unix socket (set/get); unit-tested with fixtures.
+- **Speed Limits**: Reuse existing `wireguard/speedlimit.ts` (tc-based) since iface is a tun device.
+- **Firewall/Hooks**: Parasitic behavior matches kernel engines (iptables + manual hook execution).
+- **Dockerfile**: Added `rust:alpine` multi-stage build stage for `boringtun-cli`.
+- **Gap Fixed**: Updated `InterfaceUpdateSchema` in `types.ts` to allow `boringtun` and `mikrotik` engine types.

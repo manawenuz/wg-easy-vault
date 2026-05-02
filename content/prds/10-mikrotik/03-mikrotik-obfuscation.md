@@ -1,7 +1,7 @@
 ---
 id: PRD-10-03
 title: MikroTik obfuscation via wg-obfuscator sidecar
-status: draft
+status: shipped
 phase: P2
 depends_on:
   - "[[prds/10-mikrotik/01-mikrotik-driver]]"
@@ -9,8 +9,12 @@ touches:
   - src/server/engines/mikrotik/obfuscator.ts (new)
   - src/server/engines/mikrotik/index.ts
   - src/server/database/repositories/wgObfuscatorConfig/schema.ts (new)
+  - src/server/database/repositories/wgObfuscatorConfig/service.ts (new)
+  - src/server/database/migrations/0006_wg_obfuscator.sql (new)
   - src/server/api/admin/interface/[id]/obfuscation.put.ts (new)
   - src/app/components/Interfaces/ObfuscationForm.vue (new)
+  - src/server/engines/mikrotik/obfuscator.test.ts (new)
+  - src/i18n/locales/en.json
 ---
 
 # PRD-10-03 — MikroTik obfuscation via wg-obfuscator
@@ -85,3 +89,12 @@ This is a P2 schema add — small enough to ship as its own migration on top of 
 pnpm test src/server/engines/mikrotik/obfuscator.test.ts
 # manual: against a CHR + a Linux test client
 ```
+
+## Resolution log (2026-05-02)
+
+- **Shipped**: Idempotent SSH-based deployment of `wg-obfuscator` containers on RouterOS.
+- **Database**: Added `wg_obfuscator_config` table and repository service.
+- **API**: Implemented `PUT /api/admin/interface/:id/obfuscation` to toggle and configure the sidecar.
+- **UI**: Added `ObfuscationForm.vue` dialog embedded in the router detail page for MikroTik interfaces.
+- **Client Config**: Added `generateClientObfuscatorConfig()` helper on `MikrotikEngine` to prepare client instructions (Integration into download endpoints deferred as a follow-up).
+- **Tests**: 5 new unit tests verifying deploy/remove/idempotency and config generation.

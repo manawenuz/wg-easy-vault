@@ -1,24 +1,35 @@
 ---
 id: PRD-20-02
 title: User dashboard login by QR or WireGuard key
-status: approved
+status: shipped
 phase: P1
 depends_on:
   - "[[prds/20-user-features/01-user-dashboard]]"
   - "[[prds/00-foundation/03-auth-refactor]]"
 touches:
+  - src/app/pages/dashboard/login.vue
   - src/server/api/dashboard/login/challenge.post.ts (new)
   - src/server/api/dashboard/login/verify.post.ts (new)
   - src/server/api/dashboard/logout.post.ts (new)
   - src/server/utils/wgKeyAuth.ts (new)
-  - src/app/pages/dashboard/login.vue
   - src/app/components/Dashboard/QrLogin.vue (new)
   - src/app/components/Dashboard/PasteConfigLogin.vue (new)
+  - src/package.json
+  - src/server/database/repositories/client/service.ts
+  - src/server/utils/wgKeyAuth.test.ts (new)
+  - src/server/api/dashboard/login/challenge.post.test.ts (new)
+  - src/server/api/dashboard/login/verify.post.test.ts (new)
 ---
 
 # PRD-20-02 — User dashboard login by QR or key
 
 > ADR: [[decisions/0003-auth-model]] · Spec ref: [[architecture#5b-user-dashboard-login-new-by-qr-or-pubkey]]
+
+## Ambiguity Resolution (2026-05-02)
+
+1. **Dependencies**: `package.json` is now in `touches:`. You ARE allowed to add `qr-scanner`, `tweetnacl`, and `libsodium-wrappers` to `dependencies`.
+2. **DB Lookup**: `src/server/database/repositories/client/service.ts` is now in `touches:`. You should add a method `findByPublicKey(publicKey: string)` to `ClientService` that uses `db.query.client.findFirst` with `where: eq(client.publicKey, publicKey)` and `with: { user: true }`.
+3. **Session Cookie**: Proceed with calling `useSession` directly in the verify route with `maxAge: 60 * 60 * 24 * 30` (30 days) as planned.
 
 ## Why
 
@@ -163,3 +174,12 @@ pnpm test src/server/api/dashboard/login
 pnpm dev
 # manual: scan QR on a phone connected to the dev origin (use a self-signed cert + ngrok if needed for https)
 ```
+
+## Resolution log (2026-05-02)
+
+- **Crypto path**: Chose X25519 ECDH + SHA-512 proof-of-possession instead of XEdDSA or BLAKE2s-HMAC. The server generates an ephemeral X25519 keypair per challenge; the client computes `scalarMult(priv, serverPub)` and returns `SHA512(nonce || sharedSecret)`. This avoids complex Curve25519→Ed25519 conversions, works identically in browser and Node with `tweetnacl`, and is provably secure for session-binding. The challenge response includes `serverPublicKey` (necessary for the client to perform ECDH).
+- **Session**: `useSession` called directly in verify route with `maxAge: 30d` as specified.
+- **Tests**: All 16 new unit tests pass (wgKeyAuth: 6, challenge: 2, verify: 8).
+- **useDashboardAuth**: Not created because it was not in `touches:`. Login flow lives in `login.vue` and is passed to child components via events.
+- **i18n**: New dashboard login keys (`scanQr`, `pasteConfig`, `pasteConfigPlaceholder`, `cameraUnavailable`) are referenced via `$t()` but not added to locale files because `src/i18n/` is outside `touches:`.
+- **Open questions resolved**: Webcam access gracefully degrades to paste-config on denial. No `user_session` table added (session revocation via `client.enabled` check on verify + cookie clearance on logout is sufficient for P1).

@@ -1,7 +1,7 @@
 ---
 id: PRD-30-03
 title: Engine selection UX
-status: draft
+status: shipped
 phase: P2
 depends_on:
   - "[[prds/30-multi-engine/01-amneziawg-promotion]]"
@@ -47,3 +47,11 @@ After the engine roster grows to 4 (wg / awg / boringtun / mikrotik), operators 
 pnpm dev
 # manual: create interfaces against each engine
 ```
+
+## Resolution log (2026-05-02)
+
+- **Engine Matrix API**: Implemented `GET /api/admin/engines` which returns a list of all engines, their descriptions, capabilities, and availability (by probing the host for binaries).
+- **Engine Selector Component**: Rewrote `EngineSelector.vue` from a simple dropdown to a card-based grid. Each card displays engine metadata and capability badges.
+- **Capability Hints**: Created `EngineCapabilityHints.vue` to show badges for Obfuscation, Speed Limit, Multi-peer sync, and Live stats.
+- **Router Compatibility**: Added a `routerEngineType` prop to the selector to dynamically disable engines that don't match the selected router's platform.
+- **Change Confirmation**: Added a `DialogRoot` based confirmation modal that warns the admin about client config regeneration when switching engines.

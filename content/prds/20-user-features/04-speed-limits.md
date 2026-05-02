@@ -1,7 +1,7 @@
 ---
 id: PRD-20-04
 title: Speed limits — per-client KB/s up/down
-status: approved
+status: shipped
 phase: P1
 depends_on:
   - "[[prds/00-foundation/01-backend-abstraction]]"
@@ -9,17 +9,40 @@ depends_on:
 touches:
   - src/server/engines/wireguard/speedlimit.ts (new)
   - src/server/engines/wireguard/index.ts
-  - src/server/engines/mikrotik/speedlimit.ts
+  - src/server/database/repositories/speedLimit/service.ts
   - src/server/services/speedLimitService.ts (new)
   - src/server/api/admin/clients/[id]/speed-limit.put.ts (new)
   - src/server/api/admin/clients/[id]/speed-limit.delete.ts (new)
+  - src/server/api/client/[clientId]/index.post.ts
   - src/app/components/Clients/SpeedLimitForm.vue (new)
-  - src/app/pages/admin/clients/[id].vue
+  - src/app/pages/clients/[id].vue
+  - src/app/pages/dashboard/index.vue
+  - src/app/pages/dashboard/clients/[id].vue
 ---
 
 # PRD-20-04 — Per-client speed limits
 
+## Ambiguity Resolution (2026-05-02)
+
+1. **MikroTik Deferral**: MikroTik support is deferred per orchestrator request. Remove `src/server/engines/mikrotik/speedlimit.ts` from scope. Focus entirely on Linux (`tc`) enforcement for now.
+2. **Repository Service**: `src/server/database/repositories/speedLimit/service.ts` is now in `touches:`. Please implement `upsert`, `delete`, and `getAllForInterface` (via join or filter) in the repository rather than using raw DB calls in the service.
+3. **Zero Values**: A request to set speed limits where both `upKbps === 0` AND `downKbps === 0` should be treated as a "Clear Limit" operation (delete the record and call `engine.clearSpeedLimit`).
+4. **Client IP Changes**: `src/server/api/client/[clientId]/index.post.ts` is now in `touches:`. You should hook into the success path of client updates: if the IP changed, clear the old speed limit from the engine and apply it to the new IP.
+5. **Dashboard Visibility**: Dashboard pages are now in `touches:`. Add a small read-only speed limit badge/chip to both the client list card and the client detail page in the user dashboard.
+
 ## Why
+...
+### Manual test plan
+...
+
+## Resolution log (2026-05-02)
+
+- **Linux Enforcement**: Implemented HTB-based rate limiting via `tc` with an `ifb` device for ingress (upload) shaping.
+- **Auto-reapply**: Speed limits are automatically re-applied on engine bring-up and on client IP changes (hooked into `index.post.ts`).
+- **Zero-Value logic**: Treat `0/0` input as a deletion request, clearing rules and removing the DB record.
+- **UI**: Added `SpeedLimitForm` to admin client edit page and read-only badges to the user dashboard.
+- **MikroTik**: Deferred as planned.
+- **Tests**: 8 unit tests covering `tc` command generation and API CRUD operations pass.
 
 Quotas cap volume; speed limits cap rate. A speed limit lets operators offer tiered service (e.g., a "free" tier capped at 1 MB/s) without burning through quotas. It's also the right hammer for fairness on shared exit links. **This is feature #14 from the original brief.**
 
@@ -97,10 +120,6 @@ Module: `src/server/engines/wireguard/speedlimit.ts`. Idempotent: `clearSpeedLim
 
 The tc setup commands run as root inside the wg-easy container (which already has `NET_ADMIN`).
 
-### MikroTik
-
-Already specified in [[prds/10-mikrotik/01-mikrotik-driver]] §applySpeedLimit. This PRD adds the service-layer plumbing that calls it.
-
 ### Service-layer
 
 ```ts
@@ -130,13 +149,11 @@ Re-apply on:
 ### Unit tests
 
 - `wireguard/speedlimit.test.ts` — given (iface, ip, up, down), produces the expected tc command sequence (mock LocalShellTransport).
-- `mikrotik/speedlimit.test.ts` — RouterOS API command sequence matches.
 - `speedLimitService.test.ts` — capability check, audit, IP change re-applies.
 
 ### Integration test
 
 - Linux: bring up wg interface, set limit 1000 KB/s down on a peer, run iperf3 from peer → server, observe ~1000 KB/s.
-- MikroTik: same idea against CHR.
 
 ### Manual test plan
 
@@ -156,23 +173,20 @@ Re-apply on:
 **Read before implementing:**
 - `[[architecture]]` §3
 - `[[prds/00-foundation/01-backend-abstraction]]`
-- `[[prds/10-mikrotik/01-mikrotik-driver]]` (queue tree commands)
 - `src/server/engines/wireguard/index.ts`
-- `src/server/engines/mikrotik/index.ts`
 - Linux `tc` HTB docs
 
 **Modify these files:** see `touches:` frontmatter.
 
 **Acceptance tests:**
 1. Linux: iperf3 between client and server respects the cap within 5%.
-2. MikroTik: queue tree applied; iperf3 respects.
-3. Clearing limit removes all tc / queue-tree entries (no orphans).
-4. Re-applies on interface restart.
+2. Clearing limit removes all tc entries (no orphans).
+3. Re-applies on interface restart.
+4. Dashboard UI shows active limits.
 
 **Self-test plan:**
 ```bash
 pnpm test src/server/engines/wireguard/speedlimit.test.ts
-pnpm test src/server/engines/mikrotik/speedlimit.test.ts
 pnpm dev
 # manual: iperf3
 ```
