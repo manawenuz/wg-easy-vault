@@ -97,7 +97,7 @@ classDiagram
         +enablePeer(iface: InterfaceType, peerPublicKey: string): Promise~void~
         +disablePeer(iface: InterfaceType, peerPublicKey: string): Promise~void~
         +applySpeedLimit(iface: InterfaceType, peerPublicKey: string, upKbps: number, downKbps: number): Promise~void~
-        +sampleUsage(iface: InterfaceType): Promise~UsageSample[]~
+        +sampleUsage(iface: InterfaceType): UsageSample[]
         +bringUp(iface: InterfaceType): Promise~void~
         +bringDown(iface: InterfaceType): Promise~void~
     }
@@ -177,13 +177,13 @@ erDiagram
         int id PK
         int router_id FK
         string name
-        string engine_type "denormalized from router"
+        string engine_type
         int port
         string ipv4_cidr
         string ipv6_cidr
         string public_key
         string private_key
-        json amnezia_params "jC,jMin,jMax,s1-s4,h1-h4,i1-i5"
+        json amnezia_params
         bool enabled
     }
     CLIENT {
@@ -201,7 +201,7 @@ erDiagram
         timestamp created_at
     }
     QUOTA {
-        int client_id PK_FK
+        int client_id PK
         bigint limit_bytes
         string period
         bigint used_bytes
@@ -210,7 +210,7 @@ erDiagram
         bool auto_disable
     }
     SPEED_LIMIT {
-        int client_id PK_FK
+        int client_id PK
         int up_kbps
         int down_kbps
     }
