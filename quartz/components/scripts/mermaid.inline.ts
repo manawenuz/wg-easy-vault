@@ -198,7 +198,7 @@ document.addEventListener("nav", async () => {
 
   const textMapping: WeakMap<HTMLElement, string> = new WeakMap()
   for (const node of nodes) {
-    textMapping.set(node, node.innerText)
+    textMapping.set(node, node.textContent)
   }
 
   async function renderMermaid() {
@@ -207,7 +207,7 @@ document.addEventListener("nav", async () => {
       node.removeAttribute("data-processed")
       const oldText = textMapping.get(node)
       if (oldText) {
-        node.innerHTML = oldText
+        node.textContent = oldText
       }
     }
 
