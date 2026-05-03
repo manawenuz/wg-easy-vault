@@ -40,6 +40,7 @@ graph TD
 
     subgraph "Data plane (routers / hosts)"
         Local[Local kernel WG<br/>wg / awg]
+        Docker[Docker fallback<br/>amneziawg-tools image]
         Boring[BoringTun<br/>userspace]
         MT[MikroTik<br/>RouterOS]
     end
@@ -51,13 +52,19 @@ graph TD
     Sched --> DB
     Sched --> Engines
     Engines -->|exec| Local
+    Engines -->|docker exec| Docker
     Engines -->|exec| Boring
     Engines -->|RouterOS API + SSH| MT
 ```
 
-The **control plane** is one process. The **data plane** is one or more routers it manages. The local box is just `router_id = 0` — the same code path that drives a remote MikroTik drives the local kernel WireGuard. This is the central simplification of the fork.
+The **control plane** is one process. The **data plane** is one or more routers it manages. The local box is just `router_id = 0` — the same code path that drives a remote MikroTik drives the local kernel WireGuard.
 
-PRDs that elaborate this view: [[prds/00-foundation/01-backend-abstraction]], [[prds/40-multi-server/01-multi-router-federation]].
+For Linux engines (WG/AWG), the orchestrator employs an **availability-first strategy**:
+1. Check for native kernel tools/modules.
+2. Fall back to userspace implementation (`wireguard-go` / `amneziawg-go`) inside the control plane container.
+3. For remote Linux hosts lacking binaries, fall back to a **Dockerized Engine** (running the tools via a transient `docker run` on the host).
+
+PRDs that elaborate this view: [[prds/00-foundation/01-backend-abstraction]], [[prds/30-multi-engine/01-amneziawg-promotion]], [[prds/40-multi-server/01-multi-router-federation]].
 
 ---
 
@@ -77,11 +84,31 @@ Today wg-easy mixes service logic into route handlers and into the `WireGuard` c
 
 A **transport** is the thing that physically delivers a command. The current code has one transport: `child_process.exec` (`src/server/utils/cmd.ts`). We add `ssh` and `routeros-api` as siblings. Drivers compose transports — the MikroTik driver uses `routeros-api` for steady state and `ssh` for bootstrap.
 
-PRDs: [[prds/00-foundation/01-backend-abstraction]], [[prds/10-mikrotik/01-mikrotik-driver]].
+---
+
+## 3. Engine Discovery & Fallback
+
+```mermaid
+flowchart TD
+    Req[Engine Command] --> Detect[Detect Environment]
+    Detect -->|Local| LocalCheck{Binary in PATH?}
+    Detect -->|Remote SSH| RemoteCheck{Binary in PATH?}
+    
+    LocalCheck -->|Yes| Exec[Direct exec]
+    LocalCheck -->|No| Userspace[Userspace Fallback<br/>wg-go / awg-go]
+    
+    RemoteCheck -->|Yes| SSHExec[ssh.exec binary]
+    RemoteCheck -->|No| DockerCheck{Docker available?}
+    
+    DockerCheck -->|Yes| DockerExec[ssh.exec docker run<br/>--network=host]
+    DockerCheck -->|No| Error[Error: Engine Unavailable]
+```
+
+To support disparate host environments (e.g., Debian vs. Alpine) without manual tool installation, the `AmneziaWgEngine` and `WireguardEngine` can wrap their commands in a containerized environment if `docker` is detected on the target host.
 
 ---
 
-## 3. VpnEngine driver interface
+## 4. VpnEngine driver interface
 
 ```mermaid
 classDiagram
